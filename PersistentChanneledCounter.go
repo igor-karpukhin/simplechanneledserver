@@ -28,6 +28,7 @@ type PersistentChanneledCounter struct {
 func NewPersistentChanneledCounter(fileName string, persistFrequency time.Duration, persistSeconds uint64) (
 	pCounter *PersistentChanneledCounter, err error) {
 
+	var newFile bool = false
 	// Check if file exists first
 	if _, err = os.Stat(fileName); err != nil {
 		log.Printf("File %s does not exists and will be created automatically", fileName)
@@ -35,6 +36,7 @@ func NewPersistentChanneledCounter(fileName string, persistFrequency time.Durati
 		if err != nil {
 			return nil, errors.New(fmt.Sprintf("Unable to create file %s", fileName))
 		}
+		newFile = true
 	}
 	// File exists, check write permission
 	file, err := os.OpenFile(fileName, os.O_RDWR, 0666)
@@ -47,10 +49,8 @@ func NewPersistentChanneledCounter(fileName string, persistFrequency time.Durati
 	pCounter.persistSeconds = persistSeconds
 	pCounter.file = file
 	pCounter.buffer = NewRingBuffer(persistSeconds)
-	err = pCounter.readFromFile()
-	if err != nil {
-		log.Println(err.Error())
-		log.Println("Starting new counter")
+	if !newFile {
+		err = pCounter.loadBuffer()
 	}
 	pCounter.inputChannel = make(chan uint64, persistSeconds * 1200)
 	pCounter.outputChannel = make(chan uint64)
@@ -65,12 +65,13 @@ func NewPersistentChanneledCounter(fileName string, persistFrequency time.Durati
 	return pCounter, nil
 }
 
-func (p *PersistentChanneledCounter) readFromFile() (err error) {
+func (p *PersistentChanneledCounter) loadBuffer() (err error) {
 	log.Println("Trying to restore previous counter")
 	fileSize, err := p.file.Stat()
 	if err != nil {
 		return errors.New("Unable to get file information")
 	}
+
 	buffer := make([]byte, fileSize.Size())
 	p.file.Seek(0, 0)
 	n, err := p.file.Read(buffer)
@@ -106,11 +107,13 @@ func (p *PersistentChanneledCounter) saveBuffer() {
 	p.file.Write([]byte(result))
 }
 
-func (p *PersistentChanneledCounter) counterPersistWorker() {
+func (p *PersistentChanneledCounter) counterPersistWorker(dataIn <-chan uint64) {
 	timeSave := time.NewTicker(p.persistFrequency)
 
 	for {
 		select {
+		case data := <-dataIn:
+			p.buffer.AddItem(data)
 		case <-timeSave.C:
 			p.saveBuffer()
 		case <-p.shutdownChannel:
@@ -129,8 +132,10 @@ func (p *PersistentChanneledCounter) counterServiceWorker() {
 	bufferMirror := NewRingBuffer(p.persistSeconds)
 	bufferMirror.CopyDataFrom(p.buffer.items)
 
-	//Persists data to file
-	go p.counterPersistWorker()
+	persistentChannel := make(chan uint64, p.persistSeconds)
+
+	//Persists data to file every <persistFrequency>
+	go p.counterPersistWorker(persistentChannel)
 
 	for {
 		select {
@@ -139,7 +144,7 @@ func (p *PersistentChanneledCounter) counterServiceWorker() {
 			if elapsedSeconds > 0 {
 				currentTime = time.Now()
 				bufferMirror.AddItem(currentCounter)
-				p.buffer.AddItem(currentCounter)
+				persistentChannel<- currentCounter
 				log.Printf("Current req/sec saved: %d", currentCounter)
 				currentCounter = 0
 			}
