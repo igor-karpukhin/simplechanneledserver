@@ -1,23 +1,23 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"log"
 	"net/http"
 	"strconv"
-	"encoding/json"
 
-	"github.com/igor-karpukhin/SimpleChanneledServer"
 	"runtime"
 	"time"
+
+	"github.com/igor-karpukhin/SimpleChanneledServer"
 )
 
 var (
-	addr = flag.String("addr", ":9090", "Address to bind")
-	fileName = flag.String("file", "storage.txt", "File to save/read data to/form")
+	addr         = flag.String("addr", ":9090", "Address to bind")
+	fileName     = flag.String("file", "storage.txt", "File to save/read data to/form")
 	storeSeconds = flag.String("seconds", "60", "Number of seconds to store")
 )
-
 
 func main() {
 	flag.Parse()
@@ -30,7 +30,7 @@ func main() {
 	}
 
 	persistentCounter, err := SimpleChanneledServer.NewPersistentChanneledCounter(
-		*fileName, time.Duration(10) * time.Millisecond, seconds)
+		*fileName, time.Duration(10)*time.Millisecond, seconds)
 	if err != nil {
 		log.Fatal(err)
 	}

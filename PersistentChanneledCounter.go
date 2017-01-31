@@ -1,28 +1,27 @@
 package SimpleChanneledServer
 
 import (
-	"os"
-	"time"
-	"log"
 	"errors"
 	"fmt"
+	"log"
+	"math"
+	"os"
 	"os/signal"
 	"strconv"
 	"strings"
-	"math"
+	"time"
 )
 
-
 type PersistentChanneledCounter struct {
-	file *os.File
-	persistFrequency time.Duration
-	persistSeconds uint64
-	inputChannel chan uint64
-	shutdownChannel chan os.Signal
-	outputChannel chan uint64
+	file              *os.File
+	persistFrequency  time.Duration
+	persistSeconds    uint64
+	inputChannel      chan uint64
+	shutdownChannel   chan os.Signal
+	outputChannel     chan uint64
 	previousTimeStamp time.Time
-	buffer *RingBuffer
-	stringData []string
+	buffer            *RingBuffer
+	stringData        []string
 }
 
 func NewPersistentChanneledCounter(fileName string, persistFrequency time.Duration, persistSeconds uint64) (
@@ -52,7 +51,7 @@ func NewPersistentChanneledCounter(fileName string, persistFrequency time.Durati
 	if !newFile {
 		err = pCounter.loadBuffer()
 	}
-	pCounter.inputChannel = make(chan uint64, persistSeconds * 1200)
+	pCounter.inputChannel = make(chan uint64, persistSeconds*1200)
 	pCounter.outputChannel = make(chan uint64)
 	pCounter.shutdownChannel = make(chan os.Signal)
 	pCounter.stringData = make([]string, persistSeconds)
@@ -100,7 +99,7 @@ func (p *PersistentChanneledCounter) loadBuffer() (err error) {
 func (p *PersistentChanneledCounter) saveBuffer() {
 	p.file.Truncate(0)
 	p.file.Seek(0, 0)
-	for i:=0; i < len(p.buffer.items); i++ {
+	for i := 0; i < len(p.buffer.items); i++ {
 		p.stringData[i] = strconv.Itoa(int(p.buffer.items[i]))
 	}
 	result := strings.Join(p.stringData, ",")
@@ -144,7 +143,7 @@ func (p *PersistentChanneledCounter) counterServiceWorker() {
 			if elapsedSeconds > 0 {
 				currentTime = time.Now()
 				bufferMirror.AddItem(currentCounter)
-				persistentChannel<- currentCounter
+				persistentChannel <- currentCounter
 				log.Printf("Current req/sec saved: %d", currentCounter)
 				currentCounter = 0
 			}
@@ -152,16 +151,16 @@ func (p *PersistentChanneledCounter) counterServiceWorker() {
 			currentCounter++
 		case <-p.outputChannel:
 			result := bufferMirror.SummElements()
-			p.outputChannel<- result
+			p.outputChannel <- result
 		}
 	}
 }
 
 func (p *PersistentChanneledCounter) IncreaseCounter() {
-	p.inputChannel<- 0
+	p.inputChannel <- 0
 }
 
 func (p *PersistentChanneledCounter) GetTotals() (result uint64) {
-	p.outputChannel<- 0
+	p.outputChannel <- 0
 	return <-p.outputChannel
 }

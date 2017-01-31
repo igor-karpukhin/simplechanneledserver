@@ -3,7 +3,7 @@ package SimpleChanneledServer
 import "errors"
 
 type RingBuffer struct {
-	items []uint64
+	items        []uint64
 	currentIndex int
 }
 
@@ -15,10 +15,10 @@ func NewRingBuffer(capacity uint64) (b *RingBuffer) {
 }
 
 func (b *RingBuffer) TailReached() (reached bool) {
-	return b.currentIndex > len(b.items) - 1
+	return b.currentIndex > len(b.items)-1
 }
 
-func (b *RingBuffer) CopyDataFrom(data []uint64) (err error){
+func (b *RingBuffer) CopyDataFrom(data []uint64) (err error) {
 	if len(data) != len(b.items) {
 		return errors.New("Size mismatch")
 	}
@@ -37,8 +37,8 @@ func (b *RingBuffer) AddItem(item uint64) {
 	b.currentIndex++
 }
 
-func (b* RingBuffer) InsertAt(item uint64, pos int) (err error) {
-	if pos > len(b.items) - 1 {
+func (b *RingBuffer) InsertAt(item uint64, pos int) (err error) {
+	if pos > len(b.items)-1 {
 		return errors.New("Index out of range")
 	}
 	b.items[pos] = item
