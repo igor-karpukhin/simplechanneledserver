@@ -27,20 +27,20 @@ type PersistentChanneledCounter struct {
 func NewPersistentChanneledCounter(fileName string, persistFrequency time.Duration, persistSeconds uint64) (
 	pCounter *PersistentChanneledCounter, err error) {
 
-	var newFile bool = false
+	newFile := false
 	// Check if file exists first
 	if _, err = os.Stat(fileName); err != nil {
 		log.Printf("File %s does not exists and will be created automatically", fileName)
 		_, err := os.Create(fileName)
-		if err != nil {
-			return nil, errors.New(fmt.Sprintf("Unable to create file %s", fileName))
+		if err != nil {	
+			return nil, fmt.Errorf("Unable to create file %s", fileName)
 		}
 		newFile = true
 	}
 	// File exists, check write permission
 	file, err := os.OpenFile(fileName, os.O_RDWR, 0666)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Unable to open file %s for reading and writing", fileName))
+		return nil, fmt.Errorf("Unable to open file %s for reading and writing", fileName)
 	}
 
 	pCounter = new(PersistentChanneledCounter)
