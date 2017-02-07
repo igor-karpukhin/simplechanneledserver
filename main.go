@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/igor-karpukhin/SimpleChanneledServer"
+	"github.com/igor-karpukhin/SimpleChanneledServer/PersistentCounter"
 )
 
 var (
@@ -29,7 +29,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	persistentCounter, err := SimpleChanneledServer.NewPersistentChanneledCounter(
+	persistentCounter, err := PersistentCounter.NewPersistentChanneledCounter(
 		*fileName, time.Duration(10)*time.Millisecond, seconds)
 	if err != nil {
 		log.Fatal(err)

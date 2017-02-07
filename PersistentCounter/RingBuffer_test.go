@@ -1,4 +1,4 @@
-package SimpleChanneledServer
+package PersistentCounter
 
 import "testing"
 

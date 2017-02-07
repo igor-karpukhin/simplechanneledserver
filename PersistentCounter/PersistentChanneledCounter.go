@@ -1,4 +1,4 @@
-package SimpleChanneledServer
+package PersistentCounter
 
 import (
 	"errors"
@@ -32,7 +32,7 @@ func NewPersistentChanneledCounter(fileName string, persistFrequency time.Durati
 	if _, err = os.Stat(fileName); err != nil {
 		log.Printf("File %s does not exists and will be created automatically", fileName)
 		_, err := os.Create(fileName)
-		if err != nil {	
+		if err != nil {
 			return nil, fmt.Errorf("Unable to create file %s", fileName)
 		}
 		newFile = true
