@@ -7,11 +7,8 @@ all:
 	go build .
 
 test:
-	go test -v -coverprofile=$(PROJECTNAME)-profile.out ./...
-
-
-test_cover:
-    go tool cover -html=$(PROJECTNAME)-profile.out
+	go test -v -coverprofile=$(PROJECTNAME)-profile.out ./PersistentCounter && \
+		go tool cover -html=$(PROJECTNAME)-profile.out
 
 clean:
 	rm $(PROJECTNAME) & rm $(PROJECTNAME)-profile.out
